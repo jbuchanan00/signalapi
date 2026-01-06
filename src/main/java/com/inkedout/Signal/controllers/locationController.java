@@ -14,7 +14,7 @@ public class locationController {
     @Value("${halo.url}")
     private String haloUrl;
 
-    @CrossOrigin(originPatterns = "*")
+    @CrossOrigin(origins = "https://app.inked-out.com")
     @GetMapping("/location/autofill")
     @ResponseBody
     public Mono<String> getLocationAutofill(@RequestParam(name = "text") String subtext){

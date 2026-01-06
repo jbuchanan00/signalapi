@@ -1,7 +1,9 @@
-FROM eclipse-temurin:25
-RUN mkdir /opt/app
-COPY japp.jar /opt/app
+FROM eclipse-temurin
+CMD ["mvn", "clean", "install"]
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
 ENV HALO_URL="localhost:8081"
-CMD ["java", "-jar", "/opt/app/japp.jar"]
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app.jar"]
 
 
