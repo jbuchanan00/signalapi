@@ -1,1 +1,13 @@
-services: {}
+services:
+  api:
+      build:
+        context: .
+        args:
+          SIGNALAPI_PORT: "8082"
+          HALO_URL: "http://localhost:8081"
+      ports:
+        - "8082:8082"
+      environment:
+        SIGNALAPI_PORT: "8082"
+        HALO_URL: "http://localhost:8081"
+
