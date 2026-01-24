@@ -8,14 +8,14 @@ import reactor.core.publisher.Mono;
 
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/location")
 public class locationController {
 
     @Value("${halo.url}")
     private String haloUrl;
 
     @CrossOrigin(origins = "https://app.inked-out.com")
-    @GetMapping("/location/autofill")
+    @GetMapping("/autofill")
     @ResponseBody
     public Mono<String> getLocationAutofill(@RequestParam(name = "text") String subtext){
         WebClientInstance webClient = new WebClientInstance(haloUrl+"/location/autofill?text="+subtext);
