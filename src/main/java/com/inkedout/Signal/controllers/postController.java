@@ -1,6 +1,6 @@
 package com.inkedout.Signal.controllers;
 
-import com.inkedout.Signal.entities.Request;
+import com.inkedout.Signal.Request;
 import com.inkedout.Signal.services.WebClientInstance;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -21,8 +21,8 @@ public class postController {
     @PostMapping("/get")
     @ResponseBody
     public String getPostsForRequest(@RequestBody Request newReq){
-        WebClientInstance haloClient = new WebClientInstance(haloUrl+"/withinradius?lat=" + newReq.loc.latitude + "&lng=" + newReq.loc.longitude + "&radius" + newReq.radius);
-        haloClient.getData("");
+        WebClientInstance haloClient = new WebClientInstance(haloUrl);
+        Mono<String> haloRes = haloClient.getData("/withinradius?lat=" + newReq.loc.latitude + "&lng=" + newReq.loc.longitude + "&radius" + newReq.radius);
 
         return "Hello";
     }
