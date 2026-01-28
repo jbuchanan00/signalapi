@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/location")
 public class locationController {
 
     private static final Logger log = LoggerFactory.getLogger(locationController.class);
@@ -18,7 +18,7 @@ public class locationController {
     private String haloUrl;
 
     @CrossOrigin(origins = "https://app.inked-out.com")
-    @GetMapping("/location/autofill")
+    @GetMapping("/autofill")
     @ResponseBody
     public Mono<String> getLocationAutofill(@RequestParam(name = "text") String subtext){
         String resString;
