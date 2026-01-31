@@ -20,12 +20,12 @@ public class locationController {
     @CrossOrigin(origins = "https://app.inked-out.com")
     @GetMapping("/autofill")
     @ResponseBody
-    public Mono<String> getLocationAutofill(@RequestParam(name = "text") String subtext){
+    public String getLocationAutofill(@RequestParam(name = "text") String subtext){
         String resString;
         log.info("HALOURL{}", haloUrl);
         WebClientInstance webClient = new WebClientInstance(haloUrl);
 
-        return webClient.getData("/autofill?text="+subtext);
+        return webClient.getData("/autofill?text="+subtext).toString();
     }
 
     @GetMapping("/helloworld")

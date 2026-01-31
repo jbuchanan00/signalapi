@@ -1,4 +1,4 @@
-package com.inkedout.Signal;
+package com.inkedout.Signal.domain;
 
 public class Location {
     public String latitude;
