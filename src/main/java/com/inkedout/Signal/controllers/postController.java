@@ -5,9 +5,10 @@ import com.inkedout.Signal.services.WebClientInstance;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
-import java.util.Arrays;
-import java.util.stream.Stream;
+import java.util.ArrayList;
 
 import static reactor.netty.http.HttpConnectionLiveness.log;
 
@@ -22,30 +23,33 @@ public class postController {
     @Value("${nectar.url}")
     private String nectarUrl;
 
-    @CrossOrigin(origins = "https://app.inked-out.com")
-    @PostMapping("/search")
+//    @CrossOrigin(origins = "https://app.inked-out.com")
+    @PostMapping(value="/search", headers="Content-Type=application/json")
     @ResponseBody
-    public Post[] getPostsForRequest(@RequestBody Request newReq){
+    public Mono<Post[]> getPostsForRequest(@RequestBody Request newReq){
         WebClientInstance haloClient = new WebClientInstance(haloUrl);
         WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
         WebClientInstance nectarClient = new WebClientInstance(nectarUrl);
-        Mono<Location[]> haloRes = haloClient.getData("/withinradius?lat=" + newReq.loc.latitude + "&lng=" + newReq.loc.longitude + "&radius" + newReq.radius).bodyToMono(Location[].class);
-        Location[] locList = haloRes.block();
-        log.info("Halo Result---", haloRes);
-        assert locList != null;
-        Mono<User[]> polvoRes = polvoClient.postData("/users/location", (RequestBody) Arrays.asList(locList)).bodyToMono(User[].class);
-        User[] userList = polvoRes.block();
-        assert userList != null;
-        Stream<Object> userIdList = Arrays.stream(userList).map(user -> {
-            UserRequest id = new UserRequest();
-            id.id = user.id;
-            return id;
-        });
-        log.info("Polvo Result---", polvoRes);
-        Mono<Post[]> postRes = nectarClient.postData("/posts/users", (RequestBody) userIdList).bodyToMono(Post[].class);
-        Post[] postList = postRes.block();
-        log.info("Post Result---", postRes);
 
-        return postList;
+        String haloUrl = "/withinradius?lat=" + newReq.loc.latitude + "&lng=" + newReq.loc.longitude + "&radius=" + newReq.radius;
+
+
+        log.info("Request:" + haloUrl);
+        return haloClient.getData(haloUrl).bodyToMono(String.class).flatMap(res -> {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode map = mapper.readTree(res);
+            log.info("Halo res:" + res);
+            return polvoClient.postData("/users/location", (RequestBody) map).bodyToMono(String.class).flatMap(userRes -> {
+                JsonNode userNode = mapper.readTree(userRes);
+                ArrayList<UserRequest> userList = new ArrayList<UserRequest>();
+                for (JsonNode user : userNode) {
+                    UserRequest id = new UserRequest();
+                    id.id = String.valueOf(user.findValue("id"));
+                    userList.add(id);
+                }
+
+                return nectarClient.postData("/posts/users", (RequestBody) userList).bodyToMono(Post[].class);
+            });
+        });
     }
 }
