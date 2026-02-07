@@ -3,6 +3,7 @@ package com.inkedout.Signal.controllers;
 import com.inkedout.Signal.domain.*;
 import com.inkedout.Signal.services.WebClientInstance;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -32,38 +33,53 @@ public class postController {
         WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
         WebClientInstance nectarClient = new WebClientInstance(nectarUrl);
 
-        String haloUrl = "/withinradius?lat=" + newReq.loc.latitude + "&lng=" + newReq.loc.longitude + "&radius=" + newReq.radius;
+        String haloUrl = "/withinradius?lat=" + newReq.loc.lat + "&lng=" + newReq.loc.lng + "&radius=" + newReq.radius;
 
 
         log.info("Request:" + haloUrl);
         return haloClient.getData(haloUrl).bodyToMono(String.class).flatMap(res -> {
+            JSONArray locationList;
+            try{
+                locationList = new JSONArray(res);
+            }catch (Exception e){
+                return Mono.just("No locations found");
+            }
 
-            JSONArray locationList = new JSONArray(res);
             ArrayList<Location> locList = new ArrayList<>();
             for(int i = 0; i < locationList.length(); i++){
                 JSONObject obj = locationList.getJSONObject(i);
                 float lat = obj.getFloat("latitude");
                 float lng = obj.getFloat("longitude");
                 Location loc = new Location();
-                loc.longitude = lng;
-                loc.latitude = lat;
+                loc.lng = lng;
+                loc.lat = lat;
                 locList.add(loc);
             }
-            ArrayList<Object> genericList = new ArrayList<>(locList);
+            LocationRequest locations = new LocationRequest();
+            locations.locations = locList;
             log.info("Halo res:" + locationList);
-            return nectarClient.getData("/posts/users?user=user-1").bodyToMono(String.class);
-//            return polvoClient.getData("/users/location?loc=-111.876183,40.758701").bodyToMono(String.class).flatMap(userRes -> {
-//                log.info("Polvo res:" + userRes);
-////                JsonNode userNode = mapper.readTree(userRes);
-////                ArrayList<UserRequest> userList = new ArrayList<>();
-////                for (JsonNode user : userNode) {
-////                    UserRequest id = new UserRequest();
-////                    id.id = String.valueOf(user.findValue("id"));
-////                    userList.add(id);
-////                }
-//
-//                return nectarClient.postData("/posts/users", new ArrayList<>()).bodyToMono(Post[].class);
-//            });
+            return polvoClient.postData("/users/location", locations).bodyToMono(String.class).flatMap(userRes -> {
+                log.info("Polvo res:" + userRes);
+                JSONArray userList;
+                try{
+                    userList = new JSONArray(userRes);
+                } catch (JSONException e) {
+                    return Mono.just("No Users For Locations Found");
+                }
+
+                ArrayList<User> usersList = new ArrayList<>();
+                for(int i = 0; i < userList.length(); i++){
+                    JSONObject obj = userList.getJSONObject(i);
+                    String id = obj.getString("id");
+                    User user = new User();
+                    user.id = id;
+                    usersList.add(user);
+                }
+                UserRequest userReq = new UserRequest();
+                userReq.ids = usersList;
+
+                return nectarClient.postData("/posts/users", userReq).bodyToMono(String.class);
+            });
         });
     }
 }
