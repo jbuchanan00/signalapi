@@ -18,7 +18,7 @@ public class locationController {
     private String haloUrl;
 
 
-    @CrossOrigin
+    @CrossOrigin(origins= "*")
     @GetMapping("/autofill")
     @ResponseBody
     public Mono<String> getLocationAutofill(@RequestParam(name = "text") String subtext){
