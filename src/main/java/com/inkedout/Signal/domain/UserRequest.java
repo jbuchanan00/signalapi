@@ -1,5 +1,7 @@
 package com.inkedout.Signal.domain;
 
+import java.util.ArrayList;
+
 public class UserRequest {
-    public String id;
+    public ArrayList<User> ids;
 }
