@@ -7,6 +7,8 @@ ENV SIGNALAPI_PORT=${SIGNALAPI_PORT}
 ENV HALO_URL=${HALO_URL}
 ENV POLVO_URL=${POLVO_URL}
 ENV NECTAR_URL=${NECTAR_URL}
+ENV vertx.disableDnsResolver=true
+ENV java.net.preferIPv4Stack=true
 RUN mvn -f /usr/src/app/pom.xml clean package -e
 
 FROM eclipse-temurin
