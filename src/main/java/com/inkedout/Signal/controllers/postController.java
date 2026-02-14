@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import static reactor.netty.http.HttpConnectionLiveness.log;
 
@@ -33,32 +32,25 @@ public class postController {
         WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
         WebClientInstance nectarClient = new WebClientInstance(nectarUrl);
 
-        String haloUrl = "/withinradius?lat=" + newReq.loc.lat + "&lng=" + newReq.loc.lng + "&radius=" + newReq.radius;
-
+        String haloUrl = "/calculate?lat=" + newReq.loc.lat + "&long=" + newReq.loc.lng + "&radius=" + newReq.radius;
 
         log.info("Request:" + haloUrl);
         return haloClient.getData(haloUrl).bodyToMono(String.class).flatMap(res -> {
-            JSONArray locationList;
+            JSONObject coordRange = new JSONObject(res);
+            CoordRange coords = new CoordRange();
             try{
-                locationList = new JSONArray(res);
-            }catch (Exception e){
-                return Mono.just("No locations found");
+                coords.maxLat = coordRange.getFloat("MaxLat");
+                coords.minLat = coordRange.getFloat("MinLat");
+                coords.maxLong = coordRange.getFloat("MaxLong");
+                coords.minLong = coordRange.getFloat("MinLong");
+            }catch(Exception e){
+                log.info("Error with calculate response" + e.getMessage());
+                return Mono.just("Error with Halo's response");
             }
-
-            ArrayList<Location> locList = new ArrayList<>();
-            for(int i = 0; i < locationList.length(); i++){
-                JSONObject obj = locationList.getJSONObject(i);
-                float lat = obj.getFloat("latitude");
-                float lng = obj.getFloat("longitude");
-                Location loc = new Location();
-                loc.lng = lng;
-                loc.lat = lat;
-                locList.add(loc);
-            }
-            LocationRequest locations = new LocationRequest();
-            locations.locations = locList;
-            log.info("Halo res:" + locationList);
-            return polvoClient.postData("/users/location", locations).bodyToMono(String.class).flatMap(userRes -> {
+            CoordRangeRequest coordReq = new CoordRangeRequest();
+            coordReq.coords = coords;
+            log.info("Halo res:" + coords);
+            return polvoClient.postData("/users/location", coordReq).bodyToMono(String.class).flatMap(userRes -> {
                 log.info("Polvo res:" + userRes);
                 JSONArray userList;
                 try{
@@ -77,7 +69,6 @@ public class postController {
                 }
                 UserRequest userReq = new UserRequest();
                 userReq.ids = usersList;
-
                 return nectarClient.postData("/posts/users", userReq).bodyToMono(String.class);
             });
         });
