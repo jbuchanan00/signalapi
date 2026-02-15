@@ -1,5 +1,6 @@
 package com.inkedout.Signal.domain;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 public class Post {
@@ -10,4 +11,5 @@ public class Post {
     public int mediaType;
     public String body;
     public String userId;
+    public ArrayList<Tag> tags;
 }

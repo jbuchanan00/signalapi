@@ -59,17 +59,27 @@ public class postController {
                     return Mono.just("No Users For Locations Found");
                 }
 
-                ArrayList<User> usersList = new ArrayList<>();
+                ArrayList<UserId> usersList = new ArrayList<>();
                 for(int i = 0; i < userList.length(); i++){
                     JSONObject obj = userList.getJSONObject(i);
                     String id = obj.getString("id");
-                    User user = new User();
+                    UserId user = new UserId();
                     user.id = id;
                     usersList.add(user);
                 }
                 UserRequest userReq = new UserRequest();
                 userReq.ids = usersList;
-                return nectarClient.postData("/posts/users", userReq).bodyToMono(String.class);
+                return nectarClient.postData("/posts/users", userReq).bodyToMono(String.class).flatMap(postRes -> {
+                    log.info("Nectar res:" + postRes);
+                    JSONArray postList;
+                    try{
+                        postList = new JSONArray(postRes);
+                    }catch(JSONException e){
+                        return Mono.just("Issue with getting posts");
+                    }
+
+                    return Mono.just("");
+                });
             });
         });
     }
