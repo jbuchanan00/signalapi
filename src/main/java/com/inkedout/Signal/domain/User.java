@@ -15,15 +15,18 @@ public class User {
     public String shopId;
 
     public void convertFromJSON(JSONObject obj){
-        obj.getString("id");
-        obj.getString("first_name");
-        obj.getString("last_name");
-        obj.getString("email");
-        obj.getString("username");
-        obj.getString("avatar_extension");
-        obj.getString("bio");
-        obj.getString("shopId");
-        obj.getInt("roleId");
-        
+        this.id = obj.getString("id");
+        this.firstName = obj.getString("first_name");
+        this.lastName = obj.getString("last_name");
+        this.email = obj.getString("email");
+        this.username = obj.optString("username");
+        this.avatarExtension = obj.optString("avatar_extension");
+        this.bio = obj.getString("bio");
+        this.shopId = obj.optString("shop_id");
+        this.roleId = obj.getInt("role_id");
+        JSONObject locObj = obj.getJSONObject("location");
+        this.location = new Location();
+        this.location.lat = locObj.getFloat("x");
+        this.location.lng = locObj.getFloat("y");
     }
 }

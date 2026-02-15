@@ -12,4 +12,5 @@ public class Post {
     public String body;
     public String userId;
     public ArrayList<Tag> tags;
+    public String imageId;
 }

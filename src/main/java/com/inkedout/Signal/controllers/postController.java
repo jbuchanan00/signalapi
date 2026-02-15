@@ -58,10 +58,14 @@ public class postController {
                 } catch (JSONException e) {
                     return Mono.just("No Users For Locations Found");
                 }
-
+                ArrayList<SearchPostResponse> responseToSend = new ArrayList<>();
                 ArrayList<UserId> usersList = new ArrayList<>();
                 for(int i = 0; i < userList.length(); i++){
                     JSONObject obj = userList.getJSONObject(i);
+                    SearchPostResponse userDataForPost = new SearchPostResponse();
+                    userDataForPost.user = new User();
+                    userDataForPost.user.convertFromJSON(obj);
+                    responseToSend.add(userDataForPost);
                     String id = obj.getString("id");
                     UserId user = new UserId();
                     user.id = id;
@@ -78,7 +82,7 @@ public class postController {
                         return Mono.just("Issue with getting posts");
                     }
 
-                    return Mono.just("");
+                    return Mono.just(new JSONObject(responseToSend).toString());
                 });
             });
         });
