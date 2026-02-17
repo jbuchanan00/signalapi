@@ -27,7 +27,7 @@ public class postController {
     @CrossOrigin(origins = "*")
     @PostMapping(value="/search")
     @ResponseBody
-    public Mono<String> getPostsForRequest(@RequestBody Request newReq){
+    public Mono<Object> getPostsForRequest(@RequestBody Request newReq){
         WebClientInstance haloClient = new WebClientInstance(haloUrl);
         WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
         WebClientInstance nectarClient = new WebClientInstance(nectarUrl);
@@ -82,7 +82,22 @@ public class postController {
                         return Mono.just("Issue with getting posts");
                     }
 
-                    return Mono.just(new JSONObject(responseToSend).toString());
+                    for(int i = 0; i < postList.length(); i++){
+                        JSONObject extractedPost = postList.getJSONObject(i);
+                        Post postData = new Post();
+                        postData.convertFromJSON(extractedPost);
+                        log.info("User Id" + postData.userId);
+                        SearchPostResponse dummyUser = new SearchPostResponse();
+                        dummyUser.user = new User();
+                        dummyUser.user.id = postData.userId;
+                        int j = responseToSend.indexOf(dummyUser);
+                        if(j > -1){
+                            SearchPostResponse instanceOfPost = responseToSend.get(j);
+                            instanceOfPost.post = postData;
+                        }
+                    }
+
+                    return Mono.just(responseToSend);
                 });
             });
         });
