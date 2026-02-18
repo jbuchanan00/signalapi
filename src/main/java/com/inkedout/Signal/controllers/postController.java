@@ -52,27 +52,31 @@ public class postController {
             log.info("Halo res:" + coords);
             return polvoClient.postData("/users/location", coordReq).bodyToMono(String.class).flatMap(userRes -> {
                 log.info("Polvo res:" + userRes);
-                JSONArray userList;
+                JSONArray userListJSON;
                 try{
-                    userList = new JSONArray(userRes);
+                    userListJSON = new JSONArray(userRes);
                 } catch (JSONException e) {
                     return Mono.just("No Users For Locations Found");
                 }
                 ArrayList<SearchPostResponse> responseToSend = new ArrayList<>();
-                ArrayList<UserId> usersList = new ArrayList<>();
-                for(int i = 0; i < userList.length(); i++){
-                    JSONObject obj = userList.getJSONObject(i);
-                    SearchPostResponse userDataForPost = new SearchPostResponse();
-                    userDataForPost.user = new User();
-                    userDataForPost.user.convertFromJSON(obj);
-                    responseToSend.add(userDataForPost);
+                ArrayList<UserId> usersIdList = new ArrayList<>();
+                ArrayList<User> userList = new ArrayList<>();
+                for(int i = 0; i < userListJSON.length(); i++){
+                    JSONObject obj = userListJSON.getJSONObject(i);
+//                    SearchPostResponse userDataForPost = new SearchPostResponse();
+//                    userDataForPost.user = new User();
+//                    userDataForPost.user.convertFromJSON(obj);
+//                    responseToSend.add(userDataForPost);
+                    User newUser = new User();
+                    newUser.convertFromJSON(obj);
+                    userList.add(newUser);
                     String id = obj.getString("id");
                     UserId user = new UserId();
                     user.id = id;
-                    usersList.add(user);
+                    usersIdList.add(user);
                 }
                 UserRequest userReq = new UserRequest();
-                userReq.ids = usersList;
+                userReq.ids = usersIdList;
                 return nectarClient.postData("/posts/users", userReq).bodyToMono(String.class).flatMap(postRes -> {
                     log.info("Nectar res:" + postRes);
                     JSONArray postList;
@@ -86,15 +90,15 @@ public class postController {
                         JSONObject extractedPost = postList.getJSONObject(i);
                         Post postData = new Post();
                         postData.convertFromJSON(extractedPost);
-                        log.info("User Id" + postData.userId);
-                        SearchPostResponse dummyUser = new SearchPostResponse();
-                        dummyUser.user = new User();
-                        dummyUser.user.id = postData.userId;
-                        int j = responseToSend.indexOf(dummyUser);
+                        SearchPostResponse searchPostResponse = new SearchPostResponse();
+                        searchPostResponse.post = postData;
+                        User dummyUser = new User();
+                        dummyUser.id = postData.userId;
+                        int j = userList.indexOf(dummyUser);
                         if(j > -1){
-                            SearchPostResponse instanceOfPost = responseToSend.get(j);
-                            instanceOfPost.post = postData;
+                            searchPostResponse.user = userList.get(j);
                         }
+                        responseToSend.add(searchPostResponse);
                     }
 
                     return Mono.just(responseToSend);

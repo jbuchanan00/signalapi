@@ -29,4 +29,12 @@ public class User {
         this.location.lat = locObj.getFloat("x");
         this.location.lng = locObj.getFloat("y");
     }
+
+    @Override
+    public boolean equals(Object o){
+        if (o == null || getClass() != o.getClass()) return false;
+
+        User dummyUser = (User) o;
+        return dummyUser.id.equals(this.id);
+    }
 }

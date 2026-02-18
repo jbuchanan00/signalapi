@@ -9,13 +9,4 @@ public class SearchPostResponse {
     public User user;
     public Shop shop;
     public String source;
-
-    @Override
-    public boolean equals(Object o){
-        log.info("Param {} Obj {}", o, this.user.id);
-        if (o == null || getClass() != o.getClass()) return false;
-
-        SearchPostResponse dummyUser = (SearchPostResponse) o;
-        return dummyUser.user.id.equals(this.user.id);
-    }
 }
