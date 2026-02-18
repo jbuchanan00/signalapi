@@ -14,6 +14,7 @@ public class Post {
     public String userId;
     public ArrayList<Tag> tags;
     public String imageId;
+    public String source;
 
     public void convertFromJSON(JSONObject obj){
         this.id = obj.getString("id");
@@ -24,6 +25,7 @@ public class Post {
         this.body = obj.optString("body");
         this.userId = obj.getString("user_id");
         this.imageId = obj.getString("image_id");
+        this.source = obj.optString("source");
         JSONArray tagsExtract = obj.getJSONArray("tags");
         this.tags = new ArrayList<>();
         for(int i = 0; i < tagsExtract.length(); i++){

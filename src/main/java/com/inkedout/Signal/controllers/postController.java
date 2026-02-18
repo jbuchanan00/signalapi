@@ -86,6 +86,10 @@ public class postController {
                         return Mono.just("Issue with getting posts");
                     }
 
+                    if(postList.isEmpty() || postList.toList().contains("No Ids in body")){
+                        return  Mono.just("No Posts Found");
+                    }
+
                     for(int i = 0; i < postList.length(); i++){
                         JSONObject extractedPost = postList.getJSONObject(i);
                         Post postData = new Post();
