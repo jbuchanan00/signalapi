@@ -1,6 +1,6 @@
 package com.inkedout.Signal.domain;
 
-public class Request {
+public class HomePostRequest {
     public Location loc;
     public String radius;
 }

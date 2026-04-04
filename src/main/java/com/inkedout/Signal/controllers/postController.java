@@ -27,7 +27,7 @@ public class postController {
     @CrossOrigin(origins = "*")
     @PostMapping(value="/search")
     @ResponseBody
-    public Mono<Object> getPostsForRequest(@RequestBody Request newReq){
+    public Mono<Object> getPostsForRequest(@RequestBody HomePostRequest newReq){
         WebClientInstance haloClient = new WebClientInstance(haloUrl);
         WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
         WebClientInstance nectarClient = new WebClientInstance(nectarUrl);
@@ -63,10 +63,6 @@ public class postController {
                 ArrayList<User> userList = new ArrayList<>();
                 for(int i = 0; i < userListJSON.length(); i++){
                     JSONObject obj = userListJSON.getJSONObject(i);
-//                    SearchPostResponse userDataForPost = new SearchPostResponse();
-//                    userDataForPost.user = new User();
-//                    userDataForPost.user.convertFromJSON(obj);
-//                    responseToSend.add(userDataForPost);
                     User newUser = new User();
                     newUser.convertFromJSON(obj);
                     userList.add(newUser);
