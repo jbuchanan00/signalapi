@@ -6,6 +6,8 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import static reactor.netty.http.HttpConnectionLiveness.log;
+
 public class WebClientInstance {
     private final WebClient client;
 
@@ -26,9 +28,15 @@ public class WebClientInstance {
     }
 
     public WebClient.ResponseSpec postData(String uri, Object body){
-        return client.post().uri(uri).body(BodyInserters.fromValue(body)).retrieve().onStatus(HttpStatusCode::is4xxClientError, response ->
-                        Mono.error(new RuntimeException("Client Error: " + response.statusCode())))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        Mono.error(new RuntimeException("Server Error: " + response.statusCode())));
+        try{
+            return client.post().uri(uri).body(BodyInserters.fromValue(body)).retrieve().onStatus(HttpStatusCode::is4xxClientError, response ->
+                            Mono.error(new RuntimeException("Client Error: " + response.statusCode())))
+                    .onStatus(HttpStatusCode::is5xxServerError, response ->
+                            Mono.error(new RuntimeException("Server Error: " + response.statusCode())));
+        }catch(Exception e){
+            log.info("Exception in postData: " + e.getMessage());
+            return null;
+        }
+
     }
 }
