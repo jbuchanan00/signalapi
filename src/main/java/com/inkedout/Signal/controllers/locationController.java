@@ -1,6 +1,7 @@
 package com.inkedout.Signal.controllers;
 
 
+import com.inkedout.Signal.services.HaloInstance;
 import com.inkedout.Signal.services.WebClientInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,9 +23,12 @@ public class locationController {
     @GetMapping("/autofill")
     @ResponseBody
     public Mono<String> getLocationAutofill(@RequestParam(name = "text") String subtext){
-        WebClientInstance webClient = new WebClientInstance(haloUrl);
+        WebClientInstance webClient = HaloInstance.getInstance().halo;
 
-        return webClient.getData("/autofill?text="+subtext).bodyToMono(String.class);
+        return webClient.getData("/autofill?text="+subtext).bodyToMono(String.class).onErrorResume(e -> {
+            log.error(e.getMessage());
+            return Mono.just("Nah");
+        });
     }
 
     @GetMapping("/helloworld")

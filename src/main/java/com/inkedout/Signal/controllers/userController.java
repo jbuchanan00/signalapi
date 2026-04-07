@@ -63,7 +63,12 @@ public class userController {
     @PostMapping("/login")
     @ResponseBody
     public Mono<String> nativeLoginUser(@RequestBody LoginForm req){
-        log.info(polvoUrl + "/welcome/auth/login");
+        try{
+            new JSONObject(req).getString("email");
+            new JSONObject(req).getString("password");
+        } catch (RuntimeException e) {
+            log.error("Error in request body: " + e.getMessage());
+        }
         WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
         try{
             return polvoClient.postData("/welcome/auth/login", req)
