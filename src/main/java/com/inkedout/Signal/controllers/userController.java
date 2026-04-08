@@ -1,12 +1,9 @@
 package com.inkedout.Signal.controllers;
 
+import com.google.gson.Gson;
 import com.inkedout.Signal.domain.*;
 import com.inkedout.Signal.services.WebClientInstance;
-import org.json.JSONObject;
-import org.json.JSONString;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -18,8 +15,6 @@ public class userController {
     @Value("${polvo.url}")
     private String polvoUrl;
 
-
-
     @GetMapping("/id")
     @ResponseBody
     public Mono<String> getUserById(@RequestParam(name="id", required = true) String userId){
@@ -29,7 +24,7 @@ public class userController {
             return polvoClient.getData(requestUrl).bodyToMono(String.class);
         }catch (Error e){
             log.error("Issue: " + e.getMessage());
-            return Mono.just("Error getting user by id");
+            return Mono.just(new Gson().toJson(new StatusResponse("Error getting user by id")));
         }
     }
 
@@ -42,7 +37,7 @@ public class userController {
             return polvoClient.getData(requestUrl).bodyToMono(String.class);
         }catch (Error e){
             log.error("Issue: " + e.getMessage());
-            return Mono.just("Error getting user by email");
+            return Mono.just(new Gson().toJson(new StatusResponse("Error getting user by email")));
         }
     }
 
@@ -52,11 +47,11 @@ public class userController {
         WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
         try{
             return polvoClient.postData("/welcome/auth/register", req).bodyToMono(String.class)
-                    .flatMap(_ -> Mono.just("Success"))
-                    .onErrorResume(e -> Mono.just("Error registering: " + e.getMessage()));
+                    .flatMap(_ -> Mono.just(new Gson().toJson(new StatusResponse("Success"))))
+                    .onErrorResume(e -> Mono.just(new Gson().toJson(new StatusResponse("Error registering: " + e.getMessage()))));
         }catch(Error e){
             log.error("Issue: ", e.getMessage());
-            return Mono.just("Something is terribly terribly wrong: " + e.getMessage());
+            return Mono.just(new Gson().toJson(new StatusResponse("Something is terribly terribly wrong: " + e.getMessage())));
         }
     }
 
@@ -68,27 +63,25 @@ public class userController {
         try{
             return polvoClient.postData("/welcome/auth/login", req)
                     .bodyToMono(String.class)
-                    .flatMap( _ -> Mono.just("Success"))
+                    .flatMap( _ -> Mono.just(new Gson().toJson(new StatusResponse("Success"))))
                     .onErrorResume(e -> {
                         log.info("Error Logging in: " + e.getMessage());
-                        return Mono.just("Failed");
+                        return Mono.just(new Gson().toJson(new StatusResponse("Failed")));
                     });
         }catch(Error e) {
             log.error("Issue: ", e.getMessage());
-            return Mono.just("Something broke :/");
+            return Mono.just(new Gson().toJson(new StatusResponse("Something broke :/")));
         }
     }
 
     @PostMapping("/edit")
     @ResponseBody
-    public ResponseEntity<String> editUserProfile(@RequestBody EditRequest req){
+    public Mono<String> editUserProfile(@RequestBody EditRequest req){
         WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
-        try{
-            polvoClient.postData("/edit", req);
-            return ResponseEntity.ok("Saved edit");
-        }catch(Error e){
-            log.error("Issue: ", e.getMessage());
-            return ResponseEntity.ok("Failed to save");
-        }
+            return polvoClient.postData("/edit", req).bodyToMono(String.class)
+                    .flatMap(res -> Mono.just(new Gson().toJson(new StatusResponse("Success")))).onErrorResume(err -> {
+                        log.error("Issue Editing: " + err.getMessage());
+                        return Mono.just(new Gson().toJson(new StatusResponse("Failed")));
+            });
     }
 }

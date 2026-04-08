@@ -45,7 +45,7 @@ public class postController {
                 coords.minLong = coordRange.getFloat("MinLong");
             }catch(Exception e){
                 log.info("Error with calculate response" + e.getMessage());
-                return Mono.just("Error with Halo's response");
+                return Mono.just(new StatusResponse("Error with Halo's response").convertToJson());
             }
             CoordRangeRequest coordReq = new CoordRangeRequest();
             coordReq.coords = coords;
@@ -56,7 +56,7 @@ public class postController {
                 try{
                     userListJSON = new JSONArray(userRes);
                 } catch (JSONException e) {
-                    return Mono.just("No Users For Locations Found");
+                    return Mono.just(new StatusResponse("No Users For Locations Found").convertToJson());
                 }
                 ArrayList<SearchPostResponse> responseToSend = new ArrayList<>();
                 ArrayList<UserId> usersIdList = new ArrayList<>();
@@ -79,11 +79,11 @@ public class postController {
                     try{
                         postList = new JSONArray(postRes);
                     }catch(JSONException e){
-                        return Mono.just("Issue with getting posts");
+                        return Mono.just(new StatusResponse("Issue with getting posts").convertToJson());
                     }
 
                     if(postList.isEmpty() || postList.toList().contains("No Ids in body")){
-                        return  Mono.just("No Posts Found");
+                        return  Mono.just(new StatusResponse("No Posts Found").convertToJson());
                     }
 
                     for(int i = 0; i < postList.length(); i++){
