@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.inkedout.Signal.domain.*;
 import com.inkedout.Signal.services.WebClientInstance;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -17,14 +19,19 @@ public class userController {
 
     @GetMapping("/id")
     @ResponseBody
-    public Mono<String> getUserById(@RequestParam(name="id", required = true) String userId){
+    public Mono<ResponseEntity<String>> getUserById(@RequestParam(name="id", required = true) String userId){
         WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
         String requestUrl = polvoUrl + "/" + userId;
         try{
-            return polvoClient.getData(requestUrl).bodyToMono(String.class);
+            return polvoClient.getData(requestUrl).bodyToMono(String.class).map(res ->
+                        new ResponseEntity<>(res, HttpStatus.OK)
+                    ).onErrorResume(_ -> {
+                        log.error("Error getting User by Id");
+                        return Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
+                    });
         }catch (Error e){
             log.error("Issue: " + e.getMessage());
-            return Mono.just(new Gson().toJson(new StatusResponse("Error getting user by id")));
+            return Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
         }
     }
 
