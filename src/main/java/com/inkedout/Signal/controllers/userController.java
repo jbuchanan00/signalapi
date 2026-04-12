@@ -1,7 +1,7 @@
 package com.inkedout.Signal.controllers;
 
-import com.google.gson.Gson;
 import com.inkedout.Signal.domain.*;
+import com.inkedout.Signal.services.PolvoClient;
 import com.inkedout.Signal.services.WebClientInstance;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -14,14 +14,12 @@ import static reactor.netty.http.HttpConnectionLiveness.log;
 @RestController
 @RequestMapping("/users")
 public class userController {
-    @Value("${polvo.url}")
-    private String polvoUrl;
 
     @GetMapping("/id")
     @ResponseBody
-    public Mono<ResponseEntity<String>> getUserById(@RequestParam(name="id", required = true) String userId){
-        WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
-        String requestUrl = polvoUrl + "/" + userId;
+    public Mono<ResponseEntity<String>> getUserById(@RequestParam(name="id") String userId){
+        WebClientInstance polvoClient = PolvoClient.getInstance();
+        String requestUrl = "/" + userId;
         try{
             return polvoClient.getData(requestUrl).bodyToMono(String.class).map(res ->
                         new ResponseEntity<>(res, HttpStatus.OK)
@@ -31,64 +29,73 @@ public class userController {
                     });
         }catch (Error e){
             log.error("Issue: " + e.getMessage());
-            return Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
+            return Mono.just(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
         }
     }
 
     @GetMapping("/email")
     @ResponseBody
-    public Mono<String> getUserByEmail(@RequestParam(name="email", required = true) String email){
-        WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
-        String requestUrl = polvoUrl + "/" + email;
+    public Mono<ResponseEntity<String>> getUserByEmail(@RequestParam(name="email") String email){
+        WebClientInstance polvoClient = PolvoClient.getInstance();
+        String requestUrl = "/" + email;
         try{
-            return polvoClient.getData(requestUrl).bodyToMono(String.class);
+            return polvoClient.getData(requestUrl).bodyToMono(String.class).map(res ->
+                        new ResponseEntity<>(res, HttpStatus.OK)
+                    ).onErrorResume(_ -> {
+                        log.error("Error getting User by Email");
+                        return Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
+            });
         }catch (Error e){
             log.error("Issue: " + e.getMessage());
-            return Mono.just(new Gson().toJson(new StatusResponse("Error getting user by email")));
+            return Mono.just(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
         }
     }
 
     @PostMapping("/register")
     @ResponseBody
-    public Mono<String> nativeRegisterUser(@RequestBody RegisterForm req){
-        WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
+    public Mono<ResponseEntity<String>> nativeRegisterUser(@RequestBody RegisterForm req){
+        WebClientInstance polvoClient = PolvoClient.getInstance();
         try{
             return polvoClient.postData("/welcome/auth/register", req).bodyToMono(String.class)
-                    .flatMap(_ -> Mono.just(new Gson().toJson(new StatusResponse("Success"))))
-                    .onErrorResume(e -> Mono.just(new Gson().toJson(new StatusResponse("Error registering: " + e.getMessage()))));
+                    .map(res -> new ResponseEntity<>(res, HttpStatus.OK))
+                    .onErrorResume(_ -> Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST)));
         }catch(Error e){
             log.error("Issue: ", e.getMessage());
-            return Mono.just(new Gson().toJson(new StatusResponse("Something is terribly terribly wrong: " + e.getMessage())));
+            return Mono.just(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
         }
     }
 
     @PostMapping("/login")
     @ResponseBody
-    public Mono<String> nativeLoginUser(@RequestBody LoginForm req){
-        log.info(polvoUrl + "/welcome/auth/login");
-        WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
+    public Mono<ResponseEntity<String>> nativeLoginUser(@RequestBody LoginForm req){
+        WebClientInstance polvoClient = PolvoClient.getInstance();
         try{
             return polvoClient.postData("/welcome/auth/login", req)
                     .bodyToMono(String.class)
-                    .flatMap( _ -> Mono.just(new Gson().toJson(new StatusResponse("Success"))))
+                    .map( res -> new ResponseEntity<>(res, HttpStatus.OK))
                     .onErrorResume(e -> {
                         log.info("Error Logging in: " + e.getMessage());
-                        return Mono.just(new Gson().toJson(new StatusResponse("Failed")));
+                        return Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
                     });
         }catch(Error e) {
             log.error("Issue: ", e.getMessage());
-            return Mono.just(new Gson().toJson(new StatusResponse("Something broke :/")));
+            return Mono.just(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
         }
     }
 
     @PostMapping("/edit")
     @ResponseBody
-    public Mono<String> editUserProfile(@RequestBody EditRequest req){
-        WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
+    public Mono<ResponseEntity<String>> editUserProfile(@RequestBody EditRequest req){
+        WebClientInstance polvoClient = PolvoClient.getInstance();
+        try{
             return polvoClient.postData("/edit", req).bodyToMono(String.class)
-                    .flatMap(res -> Mono.just(new Gson().toJson(new StatusResponse("Success")))).onErrorResume(err -> {
-                        log.error("Issue Editing: " + err.getMessage());
-                        return Mono.just(new Gson().toJson(new StatusResponse("Failed")));
-            });
+                .map(_ -> new ResponseEntity<String>(HttpStatus.OK)).onErrorResume(_ ->
+                        Mono.just(ResponseEntity.badRequest().build())
+                    );
+        }catch(Error e) {
+            log.error("Issue: ", e.getMessage());
+            return Mono.just(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
+        }
+
     }
 }

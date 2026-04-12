@@ -1,11 +1,15 @@
 package com.inkedout.Signal.controllers;
 
 import com.inkedout.Signal.domain.*;
+import com.inkedout.Signal.services.HaloClient;
+import com.inkedout.Signal.services.NectarClient;
+import com.inkedout.Signal.services.PolvoClient;
 import com.inkedout.Signal.services.WebClientInstance;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -17,20 +21,13 @@ import static reactor.netty.http.HttpConnectionLiveness.log;
 @RequestMapping("/posts")
 public class postController {
 
-    @Value("${halo.url}")
-    private String haloUrl;
-    @Value("${polvo.url}")
-    private String polvoUrl;
-    @Value("${nectar.url}")
-    private String nectarUrl;
-
     @CrossOrigin(origins = "*")
     @PostMapping(value="/search")
     @ResponseBody
-    public Mono<Object> getPostsForRequest(@RequestBody HomePostRequest newReq){
-        WebClientInstance haloClient = new WebClientInstance(haloUrl);
-        WebClientInstance polvoClient = new WebClientInstance(polvoUrl);
-        WebClientInstance nectarClient = new WebClientInstance(nectarUrl);
+    public Mono<ResponseEntity<String>> getPostsForRequest(@RequestBody HomePostRequest newReq){
+        WebClientInstance haloClient = HaloClient.getInstance();
+        WebClientInstance polvoClient = PolvoClient.getInstance();
+        WebClientInstance nectarClient = NectarClient.getInstance();
 
         String haloUrl = "/calculate?lat=" + newReq.loc.lat + "&long=" + newReq.loc.lng + "&radius=" + newReq.radius;
 
@@ -45,7 +42,7 @@ public class postController {
                 coords.minLong = coordRange.getFloat("MinLong");
             }catch(Exception e){
                 log.info("Error with calculate response" + e.getMessage());
-                return Mono.just(new StatusResponse("Error with Halo's response").convertToJson());
+                return Mono.just(new ResponseEntity<>("Error with Halo's response", HttpStatus.INTERNAL_SERVER_ERROR));
             }
             CoordRangeRequest coordReq = new CoordRangeRequest();
             coordReq.coords = coords;
@@ -56,7 +53,7 @@ public class postController {
                 try{
                     userListJSON = new JSONArray(userRes);
                 } catch (JSONException e) {
-                    return Mono.just(new StatusResponse("No Users For Locations Found").convertToJson());
+                    return Mono.just(new ResponseEntity<>("No Users For Locations Found", HttpStatus.NO_CONTENT));
                 }
                 ArrayList<SearchPostResponse> responseToSend = new ArrayList<>();
                 ArrayList<UserId> usersIdList = new ArrayList<>();
@@ -79,11 +76,11 @@ public class postController {
                     try{
                         postList = new JSONArray(postRes);
                     }catch(JSONException e){
-                        return Mono.just(new StatusResponse("Issue with getting posts").convertToJson());
+                        return Mono.just(new ResponseEntity<>("Issue with getting posts", HttpStatus.INTERNAL_SERVER_ERROR));
                     }
 
                     if(postList.isEmpty() || postList.toList().contains("No Ids in body")){
-                        return  Mono.just(new StatusResponse("No Posts Found").convertToJson());
+                        return  Mono.just(new ResponseEntity<>("No Posts Found", HttpStatus.NO_CONTENT));
                     }
 
                     for(int i = 0; i < postList.length(); i++){
@@ -101,9 +98,17 @@ public class postController {
                         responseToSend.add(searchPostResponse);
                     }
 
-                    return Mono.just(responseToSend);
+                    return Mono.just(new ResponseEntity<>(JSONObject.valueToString(responseToSend), HttpStatus.OK));
                 });
             });
         });
+    }
+
+    @ResponseBody
+    @GetMapping("/artist")
+    public Mono<ResponseEntity<String>> getPostsForArtist(@RequestParam(name="id") String artistId){
+
+
+        return Mono.just(new ResponseEntity<>(HttpStatus.OK));
     }
 }

@@ -1,6 +1,7 @@
 package com.inkedout.Signal.controllers;
 
 
+import com.inkedout.Signal.services.HaloClient;
 import com.inkedout.Signal.services.WebClientInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,23 +14,12 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/location")
 public class locationController {
 
-    private static final Logger log = LoggerFactory.getLogger(locationController.class);
-    @Value("${halo.url}")
-    private String haloUrl;
-
-
     @CrossOrigin(origins= "*")
     @GetMapping("/autofill")
     @ResponseBody
     public Mono<String> getLocationAutofill(@RequestParam(name = "text") String subtext){
-        WebClientInstance webClient = new WebClientInstance(haloUrl);
+        WebClientInstance webClient = HaloClient.getInstance();
 
         return webClient.getData("/autofill?text="+subtext).bodyToMono(String.class);
-    }
-
-    @GetMapping("/helloworld")
-    @ResponseBody
-    public String getHelloWorld(){
-        return "Hello World!";
     }
 }
