@@ -1,7 +1,7 @@
 package com.inkedout.Signal.domain;
 
 public class RegisterForm {
-    String username;
-    String email;
-    String password;
+    public String username;
+    public String email;
+    public String password;
 }

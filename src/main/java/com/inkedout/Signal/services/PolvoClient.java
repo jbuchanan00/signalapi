@@ -1,21 +1,23 @@
 package com.inkedout.Signal.services;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+@Component
 public class PolvoClient {
     @Value("${polvo.url}")
-    private static String polvoUrl;
+    private String polvoUrl;
+    public WebClientInstance polvoInstance;
 
-    static WebClientInstance polvoInstance;
 
-    static void init(){
-        polvoInstance = new WebClientInstance(polvoUrl);
+    PolvoClient(){
+        init();
     }
 
-    public static WebClientInstance getInstance(){
-        if(polvoInstance == null){
-            init();
-        }
-        return polvoInstance;
+    @PostConstruct
+    void init(){
+        this.polvoInstance = new WebClientInstance(polvoUrl);
     }
+
 }

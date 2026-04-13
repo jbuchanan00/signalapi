@@ -1,9 +1,8 @@
 package com.inkedout.Signal.controllers;
-
 import com.inkedout.Signal.domain.*;
 import com.inkedout.Signal.services.PolvoClient;
 import com.inkedout.Signal.services.WebClientInstance;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,15 +12,20 @@ import static reactor.netty.http.HttpConnectionLiveness.log;
 
 @RestController
 @RequestMapping("/users")
-public class userController {
+public class UserController {
+    @Autowired
+    UserController(PolvoClient polvoClient) {
+        this.polvoClientInstance = polvoClient.polvoInstance;
+    }
+
+    private final WebClientInstance polvoClientInstance;
 
     @GetMapping("/id")
     @ResponseBody
-    public Mono<ResponseEntity<String>> getUserById(@RequestParam(name="id") String userId){
-        WebClientInstance polvoClient = PolvoClient.getInstance();
-        String requestUrl = "/" + userId;
+    public Mono<ResponseEntity<String>> getUserById(@RequestParam(name="id") String userId) {
+
         try{
-            return polvoClient.getData(requestUrl).bodyToMono(String.class).map(res ->
+            return polvoClientInstance.getData("/users/ids?id=" + userId).bodyToMono(String.class).map(res ->
                         new ResponseEntity<>(res, HttpStatus.OK)
                     ).onErrorResume(_ -> {
                         log.error("Error getting User by Id");
@@ -33,13 +37,15 @@ public class userController {
         }
     }
 
+
     @GetMapping("/email")
     @ResponseBody
     public Mono<ResponseEntity<String>> getUserByEmail(@RequestParam(name="email") String email){
-        WebClientInstance polvoClient = PolvoClient.getInstance();
+
         String requestUrl = "/" + email;
+
         try{
-            return polvoClient.getData(requestUrl).bodyToMono(String.class).map(res ->
+            return polvoClientInstance.getData(requestUrl).bodyToMono(String.class).map(res ->
                         new ResponseEntity<>(res, HttpStatus.OK)
                     ).onErrorResume(_ -> {
                         log.error("Error getting User by Email");
@@ -54,11 +60,13 @@ public class userController {
     @PostMapping("/register")
     @ResponseBody
     public Mono<ResponseEntity<String>> nativeRegisterUser(@RequestBody RegisterForm req){
-        WebClientInstance polvoClient = PolvoClient.getInstance();
+
         try{
-            return polvoClient.postData("/welcome/auth/register", req).bodyToMono(String.class)
+            return polvoClientInstance.postData("/welcome/auth/register", req).bodyToMono(String.class)
                     .map(res -> new ResponseEntity<>(res, HttpStatus.OK))
-                    .onErrorResume(_ -> Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST)));
+                    .onErrorResume(err -> {
+                            log.error("Error getting User by Email " + err.getMessage());
+                            return Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST));});
         }catch(Error e){
             log.error("Issue: ", e.getMessage());
             return Mono.just(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
@@ -68,9 +76,9 @@ public class userController {
     @PostMapping("/login")
     @ResponseBody
     public Mono<ResponseEntity<String>> nativeLoginUser(@RequestBody LoginForm req){
-        WebClientInstance polvoClient = PolvoClient.getInstance();
+
         try{
-            return polvoClient.postData("/welcome/auth/login", req)
+            return polvoClientInstance.postData("/welcome/auth/login", req)
                     .bodyToMono(String.class)
                     .map( res -> new ResponseEntity<>(res, HttpStatus.OK))
                     .onErrorResume(e -> {
@@ -86,9 +94,9 @@ public class userController {
     @PostMapping("/edit")
     @ResponseBody
     public Mono<ResponseEntity<String>> editUserProfile(@RequestBody EditRequest req){
-        WebClientInstance polvoClient = PolvoClient.getInstance();
+
         try{
-            return polvoClient.postData("/edit", req).bodyToMono(String.class)
+            return polvoClientInstance.postData("/edit", req).bodyToMono(String.class)
                 .map(_ -> new ResponseEntity<String>(HttpStatus.OK)).onErrorResume(_ ->
                         Mono.just(ResponseEntity.badRequest().build())
                     );

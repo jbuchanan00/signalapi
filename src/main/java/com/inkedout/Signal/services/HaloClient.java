@@ -1,21 +1,22 @@
 package com.inkedout.Signal.services;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+@Component
 public class HaloClient {
     @Value("${halo.url}")
-    private static String haloUrl;
+    private String haloUrl;
+    public WebClientInstance haloInstance;
 
-    static WebClientInstance haloInstance;
 
-    static void init(){
-        haloInstance = new WebClientInstance(haloUrl);
+    HaloClient(){
+        init();
     }
 
-    public static WebClientInstance getInstance(){
-        if(haloInstance == null){
-            init();
-        }
-        return haloInstance;
+    @PostConstruct
+    void init(){
+        this.haloInstance = new WebClientInstance(haloUrl);
     }
 }

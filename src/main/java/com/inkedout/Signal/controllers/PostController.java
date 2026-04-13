@@ -19,20 +19,25 @@ import static reactor.netty.http.HttpConnectionLiveness.log;
 
 @RestController
 @RequestMapping("/posts")
-public class postController {
+public class PostController {
+    PostController(PolvoClient polvoClient, NectarClient nectarClient, HaloClient haloClient){
+        polvoClientInstance = polvoClient.polvoInstance;
+        nectarClientInstance = nectarClient.nectarInstance;
+        haloClientInstance = haloClient.haloInstance;
+    }
+
+    private final WebClientInstance polvoClientInstance;
+    private final WebClientInstance nectarClientInstance;
+    private final WebClientInstance haloClientInstance;
 
     @CrossOrigin(origins = "*")
     @PostMapping(value="/search")
     @ResponseBody
     public Mono<ResponseEntity<String>> getPostsForRequest(@RequestBody HomePostRequest newReq){
-        WebClientInstance haloClient = HaloClient.getInstance();
-        WebClientInstance polvoClient = PolvoClient.getInstance();
-        WebClientInstance nectarClient = NectarClient.getInstance();
-
         String haloUrl = "/calculate?lat=" + newReq.loc.lat + "&long=" + newReq.loc.lng + "&radius=" + newReq.radius;
 
         log.info("Request:" + haloUrl);
-        return haloClient.getData(haloUrl).bodyToMono(String.class).flatMap(res -> {
+        return haloClientInstance.getData(haloUrl).bodyToMono(String.class).flatMap(res -> {
             JSONObject coordRange = new JSONObject(res);
             CoordRange coords = new CoordRange();
             try{
@@ -47,7 +52,7 @@ public class postController {
             CoordRangeRequest coordReq = new CoordRangeRequest();
             coordReq.coords = coords;
             log.info("Halo res:" + coords);
-            return polvoClient.postData("/users/location", coordReq).bodyToMono(String.class).flatMap(userRes -> {
+            return polvoClientInstance.postData("/users/location", coordReq).bodyToMono(String.class).flatMap(userRes -> {
                 log.info("Polvo res:" + userRes);
                 JSONArray userListJSON;
                 try{
@@ -70,7 +75,7 @@ public class postController {
                 }
                 UserRequest userReq = new UserRequest();
                 userReq.ids = usersIdList;
-                return nectarClient.postData("/posts/users", userReq).bodyToMono(String.class).flatMap(postRes -> {
+                return nectarClientInstance.postData("/posts/users", userReq).bodyToMono(String.class).flatMap(postRes -> {
                     log.info("Nectar res:" + postRes);
                     JSONArray postList;
                     try{

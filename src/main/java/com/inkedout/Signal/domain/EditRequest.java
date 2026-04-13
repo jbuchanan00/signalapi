@@ -5,4 +5,5 @@ public class EditRequest {
     String description;
     Location location;
     User user;
+    int role;
 }

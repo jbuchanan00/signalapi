@@ -1,21 +1,22 @@
 package com.inkedout.Signal.services;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+@Component
 public class NectarClient {
-    @Value("${nectar.url")
-    private static String nectarUrl;
+    @Value("${nectar.url}")
+    private String nectarUrl;
+    public WebClientInstance nectarInstance;
 
-    static WebClientInstance nectarInstance;
 
-    static void init(){
-        nectarInstance = new WebClientInstance(nectarUrl);
+    NectarClient(){
+        init();
     }
 
-    public static WebClientInstance getInstance(){
-        if(nectarInstance == null){
-            init();
-        }
-        return nectarInstance;
+    @PostConstruct
+    void init(){
+        this.nectarInstance = new WebClientInstance(nectarUrl);
     }
 }
