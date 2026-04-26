@@ -1,7 +1,9 @@
 package com.inkedout.Signal.controllers;
 import com.inkedout.Signal.domain.*;
+import com.inkedout.Signal.services.JwtHelper;
 import com.inkedout.Signal.services.PolvoClient;
 import com.inkedout.Signal.services.WebClientInstance;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -80,7 +82,12 @@ public class UserController {
         try{
             return polvoClientInstance.postData("/welcome/auth/login", req)
                     .bodyToMono(String.class)
-                    .map( res -> new ResponseEntity<>(res, HttpStatus.OK))
+                    .map( res -> {
+                        String userId = new JSONObject(res).getString("id");
+                        String shortJwt = new JwtHelper().CreateToken(userId, "short");
+                        String longJwt = new JwtHelper().CreateToken(userId, "long");
+                        return new ResponseEntity<>(res, HttpStatus.OK);
+                    })
                     .onErrorResume(e -> {
                         log.info("Error Logging in: " + e.getMessage());
                         return Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST));
