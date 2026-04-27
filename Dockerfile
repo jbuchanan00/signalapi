@@ -3,16 +3,18 @@ COPY src /usr/src/app/src
 COPY pom.xml /usr/src/app
 ARG SIGNALAPI_PORT
 ARG HALO_URL
+ARG JWT_SECRET
 ENV SIGNALAPI_PORT=${SIGNALAPI_PORT}
 ENV HALO_URL=${HALO_URL}
 ENV POLVO_URL=${POLVO_URL}
 ENV NECTAR_URL=${NECTAR_URL}
-ENV JWT_SECRET=${JWT_SECRET}
+
 ENV vertx.disableDnsResolver=true
 ENV java.net.preferIPv4Stack=true
 RUN mvn -f /usr/src/app/pom.xml clean package -e
 
 FROM eclipse-temurin
+ENV JWT_SECRET=${JWT_SECRET}
 COPY --from=build /usr/src/app/target/Signal-0.0.1-SNAPSHOT.jar /usr/app/Signal-0.0.1-SNAPSHOT.jar
 EXPOSE 8082
 ENTRYPOINT ["java", "-jar","/usr/app/Signal-0.0.1-SNAPSHOT.jar"]

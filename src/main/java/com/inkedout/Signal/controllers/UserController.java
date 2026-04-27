@@ -1,4 +1,5 @@
 package com.inkedout.Signal.controllers;
+import com.google.gson.JsonObject;
 import com.inkedout.Signal.domain.*;
 import com.inkedout.Signal.services.JwtHelper;
 import com.inkedout.Signal.services.PolvoClient;
@@ -16,9 +17,12 @@ import static reactor.netty.http.HttpConnectionLiveness.log;
 @RequestMapping("/users")
 public class UserController {
     @Autowired
-    UserController(PolvoClient polvoClient) {
+    UserController(PolvoClient polvoClient, JwtHelper jwtHelper) {
         this.polvoClientInstance = polvoClient.polvoInstance;
+        this.jwtHelper = jwtHelper;
     }
+
+    private final JwtHelper jwtHelper;
 
     private final WebClientInstance polvoClientInstance;
 
@@ -65,7 +69,16 @@ public class UserController {
 
         try{
             return polvoClientInstance.postData("/welcome/auth/register", req).bodyToMono(String.class)
-                    .map(res -> new ResponseEntity<>(res, HttpStatus.OK))
+                    .map(res -> {
+                        JSONObject userObj = new JSONObject(res).getJSONObject("user");
+                        String userId = userObj.getString("id");
+                        String shortJwt = jwtHelper.CreateToken(userId, "short");
+                        String longJwt = jwtHelper.CreateToken(userId, "long");
+                        JSONObject tokens = new JSONObject().put("short", shortJwt).put("long", longJwt);
+//                        JSONObject tokens = new JSONObject().append("short", shortJwt).append("long", longJwt);
+                        JSONObject authObj = new JSONObject().put("user", userObj).put("tokens", tokens);
+                        return new ResponseEntity<>(authObj.toString(), HttpStatus.OK);
+                    })
                     .onErrorResume(err -> {
                             log.error("Error getting User by Email " + err.getMessage());
                             return Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST));});
@@ -83,10 +96,13 @@ public class UserController {
             return polvoClientInstance.postData("/welcome/auth/login", req)
                     .bodyToMono(String.class)
                     .map( res -> {
-                        String userId = new JSONObject(res).getString("id");
-                        String shortJwt = new JwtHelper().CreateToken(userId, "short");
-                        String longJwt = new JwtHelper().CreateToken(userId, "long");
-                        return new ResponseEntity<>(res, HttpStatus.OK);
+                        JSONObject userObj = new JSONObject(res).getJSONObject("user");
+                        String userId = userObj.getString("id");
+                        String shortJwt = jwtHelper.CreateToken(userId, "short");
+                        String longJwt = jwtHelper.CreateToken(userId, "long");
+                        JSONObject tokens = new JSONObject().append("short", shortJwt).append("long", longJwt);
+                        JSONObject authObj = new JSONObject().append("user", userObj).append("tokens", tokens);
+                        return new ResponseEntity<>(authObj.toString(), HttpStatus.OK);
                     })
                     .onErrorResume(e -> {
                         log.info("Error Logging in: " + e.getMessage());

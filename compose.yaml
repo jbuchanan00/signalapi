@@ -6,6 +6,7 @@ services:
         HALO_URL: "http://halo:8080"
         NECTAR_URL: "http://nectar-app-1:5175/nectar"
         POLVO_URL: "http://polvo-dev:5173/profile"
+        JWT_SECRET: "31e39319b8f5921fee4727ab01f8ccfd0eb544952df56b0677113268962d4444"
     ports:
       - "8082:8082"
     environment:
