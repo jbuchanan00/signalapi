@@ -127,6 +127,18 @@ public class UserController {
             log.error("Issue: ", e.getMessage());
             return Mono.just(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
         }
+    }
 
+    @GetMapping("/auth/google")
+    @ResponseBody
+    public Mono<ResponseEntity<String>> authGoogle(@RequestParam(name="code") String code){
+        try{
+            return polvoClientInstance.getData("/auth/google/callback?code=" + code).bodyToMono(String.class)
+                    .map(res -> new ResponseEntity<>(res, HttpStatus.OK))
+                    .onErrorResume(_ -> Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST)));
+        } catch (Exception e) {
+            log.error("Issue: ", e.getMessage());
+            return Mono.just(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
+        }
     }
 }

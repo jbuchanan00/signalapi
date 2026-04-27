@@ -41,18 +41,14 @@ public class PostController {
             JSONObject coordRange = new JSONObject(res);
             CoordRange coords = new CoordRange();
             try{
-                coords.maxLat = coordRange.getFloat("MaxLat");
-                coords.minLat = coordRange.getFloat("MinLat");
-                coords.maxLong = coordRange.getFloat("MaxLong");
-                coords.minLong = coordRange.getFloat("MinLong");
+                coords.convertFromJSON(coordRange);
             }catch(Exception e){
                 log.info("Error with calculate response" + e.getMessage());
                 return Mono.just(new ResponseEntity<>("Error with Halo's response", HttpStatus.INTERNAL_SERVER_ERROR));
             }
-            CoordRangeRequest coordReq = new CoordRangeRequest();
-            coordReq.coords = coords;
+            CoordRange coordReq = new CoordRange();
             log.info("Halo res:" + coords);
-            return polvoClientInstance.postData("/users/location", coordReq).bodyToMono(String.class).flatMap(userRes -> {
+            return polvoClientInstance.postData("/users/location", coordReq.request()).bodyToMono(String.class).flatMap(userRes -> {
                 log.info("Polvo res:" + userRes);
                 JSONArray userListJSON;
                 try{
