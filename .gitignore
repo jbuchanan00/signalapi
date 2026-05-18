@@ -5,7 +5,7 @@ target/
 !**/src/test/**/target/
 notes.md
 /media
-/.env
+.env
 
 ### STS ###
 .apt_generated
