@@ -31,7 +31,6 @@ public class JwtHelper {
     }
 
     public String CreateToken(String userId, String exp){
-        log.info("Verifying Token" + JWTSECRET);
         long expMilli;
         if(exp.equals("short")){
             expMilli = SHORT_EXP;

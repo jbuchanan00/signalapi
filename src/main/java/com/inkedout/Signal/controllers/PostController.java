@@ -1,5 +1,6 @@
 package com.inkedout.Signal.controllers;
 
+import com.google.gson.Gson;
 import com.inkedout.Signal.domain.*;
 import com.inkedout.Signal.services.HaloClient;
 import com.inkedout.Signal.services.NectarClient;
@@ -35,8 +36,7 @@ public class PostController {
     @ResponseBody
     public Mono<ResponseEntity<String>> getPostsForRequest(@RequestBody HomePostRequest newReq){
         String haloUrl = "/calculate?lat=" + newReq.loc.lat + "&long=" + newReq.loc.lng + "&radius=" + newReq.radius;
-
-        log.info("Request:" + haloUrl);
+        log.info("haloUrl: " + haloUrl);
         return haloClientInstance.getData(haloUrl).bodyToMono(String.class).flatMap(res -> {
             JSONObject coordRange = new JSONObject(res);
             CoordRange coords = new CoordRange();
@@ -46,10 +46,7 @@ public class PostController {
                 log.info("Error with calculate response" + e.getMessage());
                 return Mono.just(new ResponseEntity<>("Error with Halo's response", HttpStatus.INTERNAL_SERVER_ERROR));
             }
-            CoordRange coordReq = new CoordRange();
-            log.info("Halo res:" + coords);
-            return polvoClientInstance.postData("/users/location", coordReq.request()).bodyToMono(String.class).flatMap(userRes -> {
-                log.info("Polvo res:" + userRes);
+            return polvoClientInstance.postData("/users/location", coords.request().toString()).bodyToMono(String.class).flatMap(userRes -> {
                 JSONArray userListJSON;
                 try{
                     userListJSON = new JSONArray(userRes);
@@ -62,7 +59,12 @@ public class PostController {
                 for(int i = 0; i < userListJSON.length(); i++){
                     JSONObject obj = userListJSON.getJSONObject(i);
                     User newUser = new User();
-                    newUser.convertFromJSON(obj);
+                    try{
+                        newUser.convertFromJSON(obj);
+                    }catch(Exception e){
+                        log.info("Error with converting user to json" + e.getMessage());
+                        return Mono.just(new ResponseEntity<>("Error with Users response", HttpStatus.INTERNAL_SERVER_ERROR));
+                    }
                     userList.add(newUser);
                     String id = obj.getString("id");
                     UserId user = new UserId();
@@ -72,7 +74,6 @@ public class PostController {
                 UserRequest userReq = new UserRequest();
                 userReq.ids = usersIdList;
                 return nectarClientInstance.postData("/posts/users", userReq).bodyToMono(String.class).flatMap(postRes -> {
-                    log.info("Nectar res:" + postRes);
                     JSONArray postList;
                     try{
                         postList = new JSONArray(postRes);
@@ -83,8 +84,8 @@ public class PostController {
                     if(postList.isEmpty() || postList.toList().contains("No Ids in body")){
                         return  Mono.just(new ResponseEntity<>("No Posts Found", HttpStatus.NO_CONTENT));
                     }
-
-                    for(int i = 0; i < postList.length(); i++){
+                    ArrayList<JSONObject> postListJSON = new ArrayList<>();
+                    for(int i = 0; i < postList.length(); i++) {
                         JSONObject extractedPost = postList.getJSONObject(i);
                         Post postData = new Post();
                         postData.convertFromJSON(extractedPost);
@@ -93,13 +94,12 @@ public class PostController {
                         User dummyUser = new User();
                         dummyUser.id = postData.userId;
                         int j = userList.indexOf(dummyUser);
-                        if(j > -1){
+                        if (j > -1) {
                             searchPostResponse.user = userList.get(j);
                         }
-                        responseToSend.add(searchPostResponse);
+                        postListJSON.add(searchPostResponse.toJson());
                     }
-
-                    return Mono.just(new ResponseEntity<>(JSONObject.valueToString(responseToSend), HttpStatus.OK));
+                    return Mono.just(new ResponseEntity<>(postListJSON.toString(), HttpStatus.OK));
                 });
             });
         });
@@ -107,9 +107,28 @@ public class PostController {
 
     @ResponseBody
     @GetMapping("/artist")
-    public Mono<ResponseEntity<String>> getPostsForArtist(@RequestParam(name="id") String artistId){
+    public Mono<ResponseEntity<String>> getPostsForArtist(@RequestParam(name="id") String artistId, @RequestParam(name="page") String page, @RequestParam(name="pagesize")  String pagesize){
+        log.info("Artist id:" + artistId);
+        try{
+            return nectarClientInstance.getData("/userposts?userId=" + artistId + "&page=" + page + "&pageSize=" + pagesize).bodyToMono(String.class)
+                    .map(res -> new ResponseEntity<>(res, HttpStatus.OK))
+                    .onErrorResume(err -> Mono.just(new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST)));
+        }catch(Exception e){
+            return Mono.just(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
+        }
+    }
 
+    @PostMapping("/new")
+    @ResponseBody
+    public Mono<ResponseEntity<String>> insertNewPost(@RequestBody String newPost){
+        log.info("New post:" + newPost);
 
-        return Mono.just(new ResponseEntity<>(HttpStatus.OK));
+        try{
+            return nectarClientInstance.postData("/addpost", newPost).bodyToMono(String.class)
+                    .map(res -> new ResponseEntity<>(res, HttpStatus.CREATED))
+                    .onErrorResume(err -> Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST)));
+        }catch(Exception e){
+            return  Mono.just(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
+        }
     }
 }

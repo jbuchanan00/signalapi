@@ -3,6 +3,7 @@ package com.inkedout.Signal.domain;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class Post {
     public String id;
@@ -15,6 +16,23 @@ public class Post {
     public ArrayList<Tag> tags;
     public String imageId;
     public String source;
+
+    public JSONObject toJson(){
+        JSONObject obj = new JSONObject();
+        obj.put("id", id);
+        obj.put("createdAt", createdAt);
+        obj.put("updatedAt", updatedAt);
+        obj.put("role", role);
+        obj.put("mediaType", mediaType);
+        obj.put("body", body);
+        obj.put("userId", userId);
+        ArrayList<JSONObject> listOfTags = tags.stream().map(Tag::toJson).collect(Collectors.toCollection(ArrayList::new));
+        obj.put("tags", new JSONArray(listOfTags));
+        obj.put("imageId", imageId);
+        obj.put("source", source);
+
+        return obj;
+    }
 
     public void convertFromJSON(JSONObject obj){
         this.id = obj.getString("id");

@@ -70,7 +70,8 @@ public class UserController {
         try{
             return polvoClientInstance.postData("/welcome/auth/register", req).bodyToMono(String.class)
                     .map(res -> {
-                        JSONObject userObj = new JSONObject(res).getJSONObject("user");
+                        log.info("Register return value " + res);
+                        JSONObject userObj = new JSONObject(res);
                         String userId = userObj.getString("id");
                         String shortJwt = jwtHelper.CreateToken(userId, "short");
                         String longJwt = jwtHelper.CreateToken(userId, "long");
@@ -80,7 +81,7 @@ public class UserController {
                         return new ResponseEntity<>(authObj.toString(), HttpStatus.OK);
                     })
                     .onErrorResume(err -> {
-                            log.error("Error getting User by Email " + err.getMessage());
+                            log.error("Error registering the user " + err.getMessage());
                             return Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST));});
         }catch(Error e){
             log.error("Issue: ", e.getMessage());
@@ -90,8 +91,7 @@ public class UserController {
 
     @PostMapping("/login")
     @ResponseBody
-    public Mono<ResponseEntity<String>> nativeLoginUser(@RequestBody LoginForm req){
-
+    public Mono<ResponseEntity<String>> nativeLoginUser(@RequestBody String req){
         try{
             return polvoClientInstance.postData("/welcome/auth/login", req)
                     .bodyToMono(String.class)
@@ -99,9 +99,8 @@ public class UserController {
                         JSONObject userObj = new JSONObject(res).getJSONObject("user");
                         String userId = userObj.getString("id");
                         String shortJwt = jwtHelper.CreateToken(userId, "short");
-                        String longJwt = jwtHelper.CreateToken(userId, "long");
-                        JSONObject tokens = new JSONObject().append("short", shortJwt).append("long", longJwt);
-                        JSONObject authObj = new JSONObject().append("user", userObj).append("tokens", tokens);
+                        JSONObject tokens = new JSONObject().put("short", shortJwt);
+                        JSONObject authObj = new JSONObject().put("user", userObj).put("token", tokens);
                         return new ResponseEntity<>(authObj.toString(), HttpStatus.OK);
                     })
                     .onErrorResume(e -> {
@@ -116,12 +115,17 @@ public class UserController {
 
     @PostMapping("/edit")
     @ResponseBody
-    public Mono<ResponseEntity<String>> editUserProfile(@RequestBody EditRequest req){
+    public Mono<ResponseEntity<String>> editUserProfile(@RequestBody String req){
 
         try{
             return polvoClientInstance.postData("/edit", req).bodyToMono(String.class)
-                .map(_ -> new ResponseEntity<String>(HttpStatus.OK)).onErrorResume(_ ->
-                        Mono.just(ResponseEntity.badRequest().build())
+                .map(res ->
+                {log.info("This is the result: " + res);
+                        return new ResponseEntity<>(res, HttpStatus.OK);}
+                )
+                .onErrorResume(e ->{
+                        log.info("There was an issue trying to edit the user profile" + e.getMessage());
+                        return Mono.just(ResponseEntity.badRequest().build());}
                     );
         }catch(Error e) {
             log.error("Issue: ", e.getMessage());
@@ -137,7 +141,20 @@ public class UserController {
                     .map(res -> new ResponseEntity<>(res, HttpStatus.OK))
                     .onErrorResume(_ -> Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST)));
         } catch (Exception e) {
-            log.error("Issue: ", e.getMessage());
+            log.error("Issue with google auth: ", e.getMessage());
+            return Mono.just(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    @PostMapping("/image/extension")
+    @ResponseBody
+    public Mono<ResponseEntity<String>> imageExtension(@RequestBody String req){
+        try{
+            return polvoClientInstance.postData("/avatar", req).bodyToMono(String.class)
+                    .map(res -> new ResponseEntity<>(res, HttpStatus.OK))
+                    .onErrorResume(_ -> Mono.just(new ResponseEntity<>(HttpStatus.BAD_REQUEST)));
+        }catch(Error e) {
+            log.error("Issue with profile image retrieval: ", e.getMessage());
             return Mono.just(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
         }
     }

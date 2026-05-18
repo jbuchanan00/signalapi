@@ -14,17 +14,33 @@ public class User {
     public String bio;
     public String shopId;
 
+    public JSONObject toJson(){
+        JSONObject searchPostResponse = new JSONObject();
+        searchPostResponse.put("id", id);
+        searchPostResponse.put("firstName", firstName);
+        searchPostResponse.put("lastName", lastName);
+        searchPostResponse.put("email", email);
+        searchPostResponse.put("username", username);
+        searchPostResponse.put("avatarExtension", avatarExtension);
+        searchPostResponse.put("roleId", roleId);
+        searchPostResponse.put("location", location.toJson());
+        searchPostResponse.put("bio", bio);
+        searchPostResponse.put("shopId", shopId);
+
+        return searchPostResponse;
+    }
+
     public void convertFromJSON(JSONObject obj){
         this.id = obj.getString("id");
-        this.firstName = obj.getString("first_name");
-        this.lastName = obj.getString("last_name");
+        this.firstName = obj.optString("first_name");
+        this.lastName = obj.optString("last_name");
         this.email = obj.getString("email");
         this.username = obj.optString("username");
         this.avatarExtension = obj.optString("avatar_extension");
-        this.bio = obj.getString("bio");
+        this.bio = obj.optString("bio");
         this.shopId = obj.optString("shop_id");
         this.roleId = obj.getInt("role_id");
-        JSONObject locObj = obj.getJSONObject("location");
+        JSONObject locObj = obj.optJSONObject("location");
         this.location = new Location();
         this.location.lat = locObj.getFloat("x");
         this.location.lng = locObj.getFloat("y");

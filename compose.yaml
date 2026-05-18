@@ -20,6 +20,16 @@ services:
     networks:
       - shared
 
+  client:
+    image: nginx
+    ports:
+        - 8080:80
+    volumes:
+      - ./media:/usr/share/nginx/media
+
+
+volumes:
+  media:
 
 networks:
   shared:
