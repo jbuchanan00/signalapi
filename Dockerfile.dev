@@ -7,7 +7,5 @@ RUN mvn -DskipTests -f /usr/src/app/pom.xml clean package -e
 
 FROM eclipse-temurin:24.0.2_12-jre-ubi10-minimal
 COPY --from=build /usr/src/app/target/Signal-0.0.1-SNAPSHOT.jar /usr/app/Signal-0.0.1-SNAPSHOT.jar
-EXPOSE 8082
+EXPOSE 8084
 ENTRYPOINT ["java", "-jar","/usr/app/Signal-0.0.1-SNAPSHOT.jar"]
-
-

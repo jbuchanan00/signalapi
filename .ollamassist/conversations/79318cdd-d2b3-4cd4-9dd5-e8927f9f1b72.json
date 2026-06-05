@@ -1,0 +1,15 @@
+{
+  "id" : "79318cdd-d2b3-4cd4-9dd5-e8927f9f1b72",
+  "title" : "Ineed help figuring out why my build is failing. It is a con...",
+  "createdAt" : 1780241162673,
+  "updatedAt" : 1780251128489,
+  "messages" : [ {
+    "role" : "USER",
+    "content" : "Ineed help figuring out why my build is failing. It is a constructor issue but Iam not sure what it should be like",
+    "timestamp" : 1780241188004
+  }, {
+    "role" : "USER",
+    "content" : "I cannot figure out how to get my build to succeed. I have lombok but it seems like it doesn't realize that because I am gettin symbol errors that my getters and setters don't exist though Ihave the annotation.",
+    "timestamp" : 1780251128489
+  } ]
+}

@@ -2,19 +2,25 @@ services:
   api:
     build:
       args:
-        SIGNALAPI_PORT: 8082
-        HALO_URL: "http://halo:8080"
-        NECTAR_URL: "http://nectar-app-1:5175/nectar"
-        POLVO_URL: "http://polvo-dev:5173/profile"
+        Dockerfile: Dockerfile.dev
+        SIGNALAPI_PORT: 8084
+        HALO_URL: ${HALO_URL}
+        NECTAR_URL: ${NECTAR_URL}
+        POLVO_URL: ${POLVO_URL}
         JWT_SECRET: "31e39319b8f5921fee4727ab01f8ccfd0eb544952df56b0677113268962d4444"
     ports:
-      - "8082:8082"
+      - "8084:8084"
     environment:
-      SIGNALAPI_PORT: 8082
-      HALO_URL: "http://halo:8080"
-      NECTAR_URL: "http://nectar-app-1:5175/nectar"
-      POLVO_URL: "http://polvo-dev:5173/profile"
+      SIGNALAPI_PORT: 8084
+      HALO_URL: ${HALO_URL}
+      NECTAR_URL: ${NECTAR_URL}
+      POLVO_URL: ${POLVO_URL}
       JWT_SECRET: "31e39319b8f5921fee4727ab01f8ccfd0eb544952df56b0677113268962d4444"
+      POSTGRES_USER_SIGNALAPI: ${POSTGRES_USER_SIGNALAPI}
+      POSTGRES_PASSWORD_SIGNALAPI: ${POSTGRES_PASSWORD_SIGNALAPI}
+      POSTGRES_DB_SIGNALAPI: ${POSTGRES_DB_SIGNALAPI}
+      POSTGRES_HOST_SIGNALAPI: ${POSTGRES_HOST_SIGNALAPI}
+      POSTGRES_PORT_SIGNALAPI: ${POSTGRES_PORT_SIGNALAPI}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
@@ -26,10 +32,32 @@ services:
         - 8080:80
     volumes:
       - ./media:/usr/share/nginx/media
+    networks:
+      - shared
+
+  postgres:
+    container_name: postgres_signalapi
+    image: postgres:16
+    restart: always
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER_SIGNALAPI}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_SIGNALAPI}
+      POSTGRES_DB: ${POSTGRES_DB_SIGNALAPI}
+    volumes:
+      - pgdata_signalapi:/var/lib/postgresql/data
+    #  - ./nectar-docker-db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    #entrypoint: [ '/bin/sh', '-c', 'rm -rf /var/run/postgresql/* && docker-entrypoint.sh postgres' ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - shared
 
 
 volumes:
   media:
+  pgdata_signalapi:
 
 networks:
   shared:

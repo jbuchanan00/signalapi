@@ -1,12 +1,6 @@
 package com.inkedout.Signal.domain;
 
-import com.google.gson.Gson;
-import org.json.JSONArray;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static reactor.netty.http.HttpConnectionLiveness.log;
 
 public class CoordRange extends JSONObject {
     public float minLat;
@@ -19,7 +13,6 @@ public class CoordRange extends JSONObject {
     }
 
     public void convertFromJSON(JSONObject obj){
-        log.info("Converting json " + obj);
         this.maxLat = obj.getFloat( "MaxLat");
         this.minLat = obj.getFloat("MinLat");
         this.maxLong = obj.getFloat("MaxLong");
