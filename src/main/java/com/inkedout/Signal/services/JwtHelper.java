@@ -43,7 +43,7 @@ public class JwtHelper {
         hash.init(key);
         java.util.Base64.Encoder encoder = java.util.Base64.getUrlEncoder().withoutPadding();
         byte[] result = hash.doFinal(combined.getBytes());
-        log.info("Hash result: {} vs {}", new String(encoder.encode(result), StandardCharsets.UTF_8), signature);
+//        log.info("Hash result: {} vs {}", new String(encoder.encode(result), StandardCharsets.UTF_8), signature);
         return new String(encoder.encode(result), StandardCharsets.UTF_8).equals(signature);
     }
 
@@ -61,7 +61,7 @@ public class JwtHelper {
         JSONObject payload = new JSONObject();
         payload.put("userid", userId);
         map.put("sub", payload);
-        map.put("exp", expMilli);
+        map.put("exp", expMilli + System.currentTimeMillis());
         String tokenJson = map.toString();
         java.util.Base64.Encoder encoder = java.util.Base64.getUrlEncoder().withoutPadding();
         byte[] headerEncoded = encoder.encode(header.getBytes());
